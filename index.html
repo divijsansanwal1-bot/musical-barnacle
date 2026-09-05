@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wire</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap');
+
+  :root{
+    --bg: #121212;
+    --panel: #1B1B1B;
+    --panel-raised: #232323;
+    --ink: #F2F0EC;
+    --ink-soft: #B7B3AC;
+    --ink-faint: #7A756C;
+    --line: #303030;
+    --line-strong: #454545;
+    --red: #E8342A;
+    --red-dark: #C22A21;
+    --good: #4CAF7D;
+  }
+  body.light{
+    --bg: #F4F3F0;
+    --panel: #FFFFFF;
+    --panel-raised: #FAFAF8;
+    --ink: #1A1A1A;
+    --ink-soft: #55524B;
+    --ink-faint: #9A968C;
+    --line: #E2E0D8;
+    --line-strong: #CBC7BA;
+    --red: #C92A20;
+    --red-dark: #A32017;
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    font-family:'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height:100vh;
+    transition: background .15s ease, color .15s ease;
+  }
+  #app{ max-width: 700px; margin:0 auto; padding-bottom: 60px; }
+
+  header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 20px 18px 0;
+  }
+  .brand{
+    font-family:'Oswald', sans-serif;
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: .02em;
+    text-transform: uppercase;
+    display:flex; align-items:center; gap:8px;
+  }
+  .brand .dot{ width:9px; height:9px; border-radius:50%; background: var(--red); }
+  .header-actions{ display:flex; gap:8px; }
+  .icon-btn{
+    background:none; border: 1px solid var(--line-strong); cursor:pointer;
+    color: var(--ink-soft); padding: 7px; border-radius:7px; display:flex;
+  }
+  .icon-btn:hover{ color: var(--red); border-color: var(--red); }
+
+  .tabs{
+    display:flex; gap:4px; margin: 18px 18px 0; overflow-x:auto;
+    border-bottom: 1px solid var(--line);
+  }
+  .tabs button{
+    background:none; border:none; cursor:pointer; white-space:nowrap;
+    padding: 10px 10px; font-family:'Oswald',sans-serif; font-size: 13px; font-weight:600;
+    text-transform:uppercase; letter-spacing:.03em;
+    color: var(--ink-faint);
+    border-bottom: 2px solid transparent;
+  }
+  .tabs button.active{ color: var(--red); border-bottom-color: var(--red); }
+
+  main{ padding: 18px; }
+  .panel{ display:none; }
+  .panel.active{ display:block; }
+
+  .btn{
+    font-family:'Inter',sans-serif; font-size:13px; font-weight:600;
+    border: 1px solid var(--line-strong); background: transparent; color: var(--ink);
+    padding: 8px 13px; border-radius:7px; cursor:pointer;
+  }
+  .btn:hover{ border-color: var(--red); color: var(--red); }
+  .btn.solid{ background: var(--red); color:#fff; border-color: var(--red); }
+  .btn.solid:hover{ background: var(--red-dark); border-color: var(--red-dark); }
+  .btn.small{ padding:6px 10px; font-size:12px; }
+
+  .tab-toolbar{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:8px; }
+  .tab-toolbar select{
+    font-family:'Inter',sans-serif; font-size:13px; padding:7px 9px; border-radius:7px;
+    border:1px solid var(--line-strong); background: var(--panel-raised); color: var(--ink);
+  }
+  .updated-note{ font-size:11px; color: var(--ink-faint); font-family:'IBM Plex Mono',monospace; }
+
+  .article-card{
+    background: var(--panel); border:1px solid var(--line); border-radius:10px;
+    padding: 14px; margin-bottom: 12px; display:flex; gap:12px;
+  }
+  .article-thumb{ width:88px; height:88px; flex-shrink:0; border-radius:7px; object-fit:cover; background: var(--panel-raised); }
+  .article-body{ flex:1; min-width:0; }
+  .article-title{ font-family:'Oswald',sans-serif; font-size:15.5px; font-weight:600; line-height:1.3; margin-bottom:4px; }
+  .article-meta{ font-size:11px; color: var(--ink-faint); margin-bottom:6px; }
+  .article-desc{ font-size:13px; color: var(--ink-soft); line-height:1.5; margin-bottom:8px; }
+  .article-link{ font-size:12.5px; font-weight:600; color: var(--red); text-decoration:none; }
+  .article-link:hover{ text-decoration:underline; }
+
+  .empty-hint{ font-size:13.5px; color: var(--ink-faint); padding: 20px 4px; text-align:center; }
+  .error-box{
+    background: rgba(232,52,42,0.1); border:1px solid rgba(232,52,42,0.35); border-radius:8px;
+    padding: 12px 14px; font-size:13px; color: var(--ink); margin-bottom:14px; line-height:1.5;
+  }
+
+  /* ---------- API key banner ---------- */
+  #key-banner{
+    background: var(--panel); border:1px solid var(--line-strong); border-radius:10px;
+    padding: 14px 16px; margin-bottom: 16px;
+  }
+  #key-banner h4{ font-family:'Oswald',sans-serif; font-size:14px; margin:0 0 6px; }
+  #key-banner p{ font-size:12.5px; color: var(--ink-soft); margin:0 0 10px; line-height:1.5; }
+  #key-banner input{
+    width:100%; font-family:'IBM Plex Mono',monospace; font-size:12.5px;
+    padding: 9px 11px; border-radius:7px; border:1px solid var(--line-strong);
+    background: var(--panel-raised); color: var(--ink); outline:none; margin-bottom:8px;
+  }
+
+  /* ---------- Settings panel ---------- */
+  #settings-overlay{ position:fixed; inset:0; background: rgba(0,0,0,0.5); z-index:29; display:none; }
+  #settings-overlay.show{ display:block; }
+  #settings-panel{
+    position:fixed; right:0; top:0; bottom:0; width: 300px; max-width:88vw;
+    background: var(--panel); border-left:1px solid var(--line-strong);
+    padding: 18px; z-index: 30; transform: translateX(100%); transition: transform .2s ease;
+    overflow-y:auto;
+  }
+  #settings-panel.open{ transform: translateX(0); }
+  #settings-panel h4{ font-family:'Oswald',sans-serif; font-size:14px; margin: 16px 0 8px; }
+  #settings-panel h4:first-child{ margin-top:0; }
+  #engine-status{ font-size:12.5px; font-family:'IBM Plex Mono',monospace; }
+
+  /* ---------- Historical search ---------- */
+  .hist-search-row{ display:flex; gap:8px; margin-bottom:16px; }
+  .hist-search-row input{
+    flex:1; font-family:'Inter',sans-serif; font-size:14px;
+    padding: 10px 12px; border-radius:8px; border:1px solid var(--line-strong);
+    background: var(--panel-raised); color: var(--ink); outline:none;
+  }
+  .hist-search-row input:focus{ border-color: var(--red); }
+  .hist-note{ font-size:11.5px; color: var(--ink-faint); margin-bottom:14px; }
+
+  ::-webkit-scrollbar{ width:9px; }
+  ::-webkit-scrollbar-thumb{ background: var(--line-strong); border-radius:5px; }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <header>
+    <div class="brand"><span class="dot"></span> Wire</div>
+    <div class="header-actions">
+      <button class="icon-btn" id="dark-toggle-btn" title="Toggle light mode">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.2" y1="4.2" x2="5.6" y2="5.6"/><line x1="18.4" y1="18.4" x2="19.8" y2="19.8"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.2" y1="19.8" x2="5.6" y2="18.4"/><line x1="18.4" y1="5.6" x2="19.8" y2="4.2"/></svg>
+      </button>
+      <button class="icon-btn" id="settings-btn" title="Settings">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <button id="tab-24h-btn" class="active">Last 24h</button>
+    <button id="tab-trending-btn">Trending</button>
+    <button id="tab-regional-btn">Regional</button>
+    <button id="tab-intl-btn">International</button>
+    <button id="tab-hist-btn">Historical</button>
+  </div>
+
+  <main>
+    <div id="key-banner" style="display:none;">
+      <h4>Add your free GNews API key</h4>
+      <p>Live news needs a key from a news provider — I can't embed my own. Get a free key at gnews.io (100 requests/day, no cost), then paste it below.</p>
+      <input type="text" id="api-key-input" placeholder="Paste your GNews API key">
+      <button class="btn solid small" id="save-key-btn">Save key</button>
+    </div>
+
+    <!-- LAST 24H -->
+    <div class="panel active" id="panel-24h">
+      <div class="tab-toolbar">
+        <span class="updated-note" id="updated-24h"></span>
+        <button class="btn small" id="refresh-24h-btn">Refresh</button>
+      </div>
+      <div id="list-24h"></div>
+    </div>
+
+    <!-- TRENDING -->
+    <div class="panel" id="panel-trending">
+      <div class="tab-toolbar">
+        <span class="updated-note" id="updated-trending"></span>
+        <button class="btn small" id="refresh-trending-btn">Refresh</button>
+      </div>
+      <div id="list-trending"></div>
+    </div>
+
+    <!-- REGIONAL -->
+    <div class="panel" id="panel-regional">
+      <div class="tab-toolbar">
+        <select id="region-select">
+          <option value="us">United States</option>
+          <option value="gb">United Kingdom</option>
+          <option value="in">India</option>
+          <option value="au">Australia</option>
+          <option value="ca">Canada</option>
+          <option value="fr">France</option>
+          <option value="de">Germany</option>
+          <option value="jp">Japan</option>
+          <option value="br">Brazil</option>
+          <option value="za">South Africa</option>
+        </select>
+        <span class="updated-note" id="updated-regional"></span>
+        <button class="btn small" id="refresh-regional-btn">Refresh</button>
+      </div>
+      <div id="list-regional"></div>
+    </div>
+
+    <!-- INTERNATIONAL -->
+    <div class="panel" id="panel-intl">
+      <div class="tab-toolbar">
+        <span class="updated-note" id="updated-intl"></span>
+        <button class="btn small" id="refresh-intl-btn">Refresh</button>
+      </div>
+      <div id="list-intl"></div>
+    </div>
+
+    <!-- HISTORICAL -->
+    <div class="panel" id="panel-hist">
+      <div class="hist-search-row">
+        <input type="text" id="hist-search-input" placeholder="Search a historical event, person, or topic…">
+        <button class="btn solid small" id="hist-search-btn">Search</button>
+      </div>
+      <div class="hist-note">Powered by Wikipedia — good for looking up famous historical events and their summaries, not a scanned newspaper archive.</div>
+      <div id="list-hist"></div>
+    </div>
+  </main>
+</div>
+
+<div id="settings-overlay"></div>
+<div id="settings-panel">
+  <h4>News provider</h4>
+  <div id="engine-status">Checking…</div>
+  <button class="btn small" id="change-key-btn" style="margin-top:10px;">Change API key</button>
+  <h4>About</h4>
+  <p style="font-size:12px; color:var(--ink-soft); line-height:1.5;">
+    Live tabs use the GNews API (your own free key). Results are cached for a while
+    to stay within the free daily limit — use Refresh to force a reload.
+  </p>
+</div>
+
+<script>
+(function(){
+  /* ---------- Storage layer ---------- */
+  const hasClaudeStorage = typeof window.storage !== 'undefined' && window.storage;
+  const LOCAL_PREFIX = 'wire:';
+  async function storeGet(key){
+    if(hasClaudeStorage){ try{ const r = await window.storage.get(key, false); return r ? r.value : null; }catch(e){ return null; } }
+    try{ return window.localStorage.getItem(LOCAL_PREFIX + key); }catch(e){ return null; }
+  }
+  async function storeSet(key, value){
+    if(hasClaudeStorage){ try{ await window.storage.set(key, value, false); return; }catch(e){} }
+    try{ window.localStorage.setItem(LOCAL_PREFIX + key, value); }catch(e){}
+  }
+
+  function escapeHtml(s){ const d = document.createElement('div'); d.textContent = s||''; return d.innerHTML; }
+  function timeAgo(ts){
+    const diff = Date.now() - ts;
+    const mins = Math.floor(diff/60000);
+    if(mins < 1) return 'just now';
+    if(mins < 60) return mins + 'm ago';
+    const hrs = Math.floor(mins/60);
+    if(hrs < 24) return hrs + 'h ago';
+    return Math.floor(hrs/24) + 'd ago';
+  }
+
+  document.getElementById('dark-toggle-btn').addEventListener('click', async () => {
+    const isLight = document.body.classList.toggle('light');
+    await storeSet('lightMode', isLight ? 'true' : 'false');
+  });
+
+  /* ---------- Tabs ---------- */
+  const tabs = {
+    '24h': { btn: document.getElementById('tab-24h-btn'), panel: document.getElementById('panel-24h'), load: loadLast24h },
+    trending: { btn: document.getElementById('tab-trending-btn'), panel: document.getElementById('panel-trending'), load: loadTrending },
+    regional: { btn: document.getElementById('tab-regional-btn'), panel: document.getElementById('panel-regional'), load: loadRegional },
+    intl: { btn: document.getElementById('tab-intl-btn'), panel: document.getElementById('panel-intl'), load: loadIntl },
+    hist: { btn: document.getElementById('tab-hist-btn'), panel: document.getElementById('panel-hist'), load: null }
+  };
+  function setTab(name){
+    Object.entries(tabs).forEach(([k,v]) => {
+      v.btn.classList.toggle('active', k===name);
+      v.panel.classList.toggle('active', k===name);
+    });
+    if(tabs[name].load) tabs[name].load(false);
+  }
+  Object.entries(tabs).forEach(([name, t]) => t.btn.addEventListener('click', () => setTab(name)));
+
+  /* ---------- API key ---------- */
+  let apiKey = null;
+  const CACHE_TTL_MS = 25 * 60 * 1000; // 25 minutes
+
+  async function loadApiKey(){ apiKey = await storeGet('gnewsKey'); }
+  document.getElementById('save-key-btn').addEventListener('click', async () => {
+    const val = document.getElementById('api-key-input').value.trim();
+    if(!val){ alert('Paste your GNews API key first.'); return; }
+    apiKey = val;
+    await storeSet('gnewsKey', val);
+    document.getElementById('key-banner').style.display = 'none';
+    updateEngineStatus();
+    loadLast24h(false);
+  });
+  document.getElementById('change-key-btn').addEventListener('click', () => {
+    settingsPanel.classList.remove('open'); settingsOverlay.classList.remove('show');
+    document.getElementById('key-banner').style.display = 'block';
+    document.getElementById('api-key-input').value = apiKey || '';
+  });
+
+  function updateEngineStatus(){
+    const el = document.getElementById('engine-status');
+    if(!apiKey){ el.textContent = 'No API key set yet.'; el.style.color = 'var(--ink-faint)'; return; }
+    el.textContent = 'GNews key saved ✓ (status confirms once a tab loads)';
+    el.style.color = 'var(--good)';
+  }
+
+  /* ---------- GNews fetch helper ---------- */
+  async function fetchGNews(params){
+    if(!apiKey){ throw new Error('No API key set — add one in Settings.'); }
+    const url = new URL('https://gnews.io/api/v4/top-headlines');
+    Object.entries(params).forEach(([k,v]) => url.searchParams.set(k, v));
+    url.searchParams.set('lang', 'en');
+    url.searchParams.set('max', '10');
+    url.searchParams.set('apikey', apiKey);
+    let res;
+    try{
+      res = await fetch(url.toString());
+    }catch(networkErr){
+      throw new Error('Network/CORS error — the request never reached GNews. This can mean GNews\'s free tier is blocking direct browser calls. Detail: ' + networkErr.message);
+    }
+    if(!res.ok){
+      const body = await res.text().catch(()=>'') ;
+      throw new Error(`GNews returned ${res.status} ${res.statusText}. ${body ? 'Detail: ' + body.slice(0,200) : ''}`);
+    }
+    const data = await res.json();
+    return data.articles || [];
+  }
+
+  function renderArticles(elId, articles){
+    const wrap = document.getElementById(elId);
+    wrap.innerHTML = '';
+    if(!articles || articles.length === 0){
+      wrap.innerHTML = '<div class="empty-hint">No articles to show right now.</div>';
+      return;
+    }
+    articles.forEach(a => {
+      const card = document.createElement('div');
+      card.className = 'article-card';
+      const pubTime = a.publishedAt ? timeAgo(new Date(a.publishedAt).getTime()) : '';
+      card.innerHTML = `
+        ${a.image ? `<img class="article-thumb" src="${a.image}" onerror="this.style.display='none'">` : ''}
+        <div class="article-body">
+          <div class="article-title">${escapeHtml(a.title || 'Untitled')}</div>
+          <div class="article-meta">${escapeHtml((a.source && a.source.name) || 'Unknown source')} · ${pubTime}</div>
+          <div class="article-desc">${escapeHtml(a.description || '')}</div>
+          <a class="article-link" href="${a.url}" target="_blank" rel="noopener">Read full article →</a>
+        </div>
+      `;
+      wrap.appendChild(card);
+    });
+  }
+
+  function renderError(elId, err){
+    document.getElementById(elId).innerHTML = `<div class="error-box"><strong>Couldn't load news.</strong><br>${escapeHtml(err.message)}</div>`;
+  }
+
+  async function getCached(key){
+    try{ const raw = await storeGet('cache_' + key); return raw ? JSON.parse(raw) : null; }catch(e){ return null; }
+  }
+  async function setCached(key, articles){
+    await storeSet('cache_' + key, JSON.stringify({ ts: Date.now(), articles }));
+  }
+
+  async function loadWithCache(cacheKey, updatedElId, listElId, force, fetchFn){
+    if(!force){
+      const cached = await getCached(cacheKey);
+      if(cached && (Date.now() - cached.ts) < CACHE_TTL_MS){
+        renderArticles(listElId, cached.articles);
+        document.getElementById(updatedElId).textContent = 'Updated ' + timeAgo(cached.ts);
+        return;
+      }
+    }
+    if(!apiKey){
+      document.getElementById(listElId).innerHTML = '<div class="empty-hint">Add a GNews API key above to load live news.</div>';
+      document.getElementById(updatedElId).textContent = '';
+      return;
+    }
+    document.getElementById(updatedElId).textContent = 'Loading…';
+    try{
+      const articles = await fetchFn();
+      await setCached(cacheKey, articles);
+      renderArticles(listElId, articles);
+      document.getElementById(updatedElId).textContent = 'Updated just now';
+      const statusEl = document.getElementById('engine-status');
+      statusEl.textContent = 'GNews connected ✓';
+      statusEl.style.color = 'var(--good)';
+    }catch(err){
+      renderError(listElId, err);
+      document.getElementById(updatedElId).textContent = '';
+      const statusEl = document.getElementById('engine-status');
+      statusEl.textContent = 'GNews error — see the failed tab for detail';
+      statusEl.style.color = 'var(--red)';
+    }
+  }
+
+
+  /* ---------- Last 24h ---------- */
+  async function loadLast24h(force){
+    await loadWithCache('24h', 'updated-24h', 'list-24h', force, async () => {
+      const articles = await fetchGNews({ topic: 'general', country: 'us' });
+      const cutoff = Date.now() - 24*60*60*1000;
+      return articles.filter(a => !a.publishedAt || new Date(a.publishedAt).getTime() >= cutoff);
+    });
+  }
+  document.getElementById('refresh-24h-btn').addEventListener('click', () => loadLast24h(true));
+
+  /* ---------- Trending ---------- */
+  async function loadTrending(force){
+    await loadWithCache('trending', 'updated-trending', 'list-trending', force, async () => {
+      return await fetchGNews({ topic: 'general', country: 'us' });
+    });
+  }
+  document.getElementById('refresh-trending-btn').addEventListener('click', () => loadTrending(true));
+
+  /* ---------- Regional ---------- */
+  async function loadRegional(force){
+    const country = document.getElementById('region-select').value;
+    await loadWithCache('regional_' + country, 'updated-regional', 'list-regional', force, async () => {
+      return await fetchGNews({ topic: 'general', country });
+    });
+  }
+  document.getElementById('refresh-regional-btn').addEventListener('click', () => loadRegional(true));
+  document.getElementById('region-select').addEventListener('change', () => loadRegional(false));
+
+  /* ---------- International ---------- */
+  async function loadIntl(force){
+    await loadWithCache('intl', 'updated-intl', 'list-intl', force, async () => {
+      return await fetchGNews({ topic: 'world' });
+    });
+  }
+  document.getElementById('refresh-intl-btn').addEventListener('click', () => loadIntl(true));
+
+  /* ---------- Historical (Wikipedia) ---------- */
+  async function searchHistorical(){
+    const q = document.getElementById('hist-search-input').value.trim();
+    if(!q) return;
+    const listEl = document.getElementById('list-hist');
+    listEl.innerHTML = '<div class="empty-hint">Searching…</div>';
+    try{
+      const url = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(q)}&format=json&origin=*&srlimit=10`;
+      const res = await fetch(url);
+      if(!res.ok) throw new Error('Wikipedia returned ' + res.status);
+      const data = await res.json();
+      const results = (data.query && data.query.search) || [];
+      if(results.length === 0){
+        listEl.innerHTML = '<div class="empty-hint">No results — try a different search term.</div>';
+        return;
+      }
+      listEl.innerHTML = '';
+      results.forEach(r => {
+        const snippet = r.snippet.replace(/<\/?span[^>]*>/g, '');
+        const card = document.createElement('div');
+        card.className = 'article-card';
+        card.innerHTML = `
+          <div class="article-body">
+            <div class="article-title">${escapeHtml(r.title)}</div>
+            <div class="article-desc">${snippet}</div>
+            <a class="article-link" href="https://en.wikipedia.org/wiki/${encodeURIComponent(r.title.replace(/ /g,'_'))}" target="_blank" rel="noopener">Read on Wikipedia →</a>
+          </div>
+        `;
+        listEl.appendChild(card);
+      });
+    }catch(err){
+      renderError('list-hist', err);
+    }
+  }
+  document.getElementById('hist-search-btn').addEventListener('click', searchHistorical);
+  document.getElementById('hist-search-input').addEventListener('keydown', (e) => { if(e.key === 'Enter') searchHistorical(); });
+
+  /* ---------- Settings panel ---------- */
+  const settingsPanel = document.getElementById('settings-panel');
+  const settingsOverlay = document.getElementById('settings-overlay');
+  document.getElementById('settings-btn').addEventListener('click', () => {
+    settingsPanel.classList.add('open'); settingsOverlay.classList.add('show');
+  });
+  settingsOverlay.addEventListener('click', () => { settingsPanel.classList.remove('open'); settingsOverlay.classList.remove('show'); });
+
+  /* ================= INIT ================= */
+  async function init(){
+    const lightPref = await storeGet('lightMode');
+    if(lightPref === 'true') document.body.classList.add('light');
+    await loadApiKey();
+    if(!apiKey){
+      document.getElementById('key-banner').style.display = 'block';
+    }
+    updateEngineStatus();
+    await loadLast24h(false);
+  }
+  init();
+})();
+</script>
+</body>
+</html>
