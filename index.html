@@ -255,8 +255,11 @@
   <button class="btn small" id="change-key-btn" style="margin-top:10px;">Change API key</button>
   <h4>About</h4>
   <p style="font-size:12px; color:var(--ink-soft); line-height:1.5;">
-    Live tabs use the GNews API (your own free key). Results are cached for a while
-    to stay within the free daily limit — use Refresh to force a reload.
+    Live tabs use the GNews API (your own free key), routed through a free
+    public CORS proxy since GNews's free tier blocks direct browser requests.
+    Results are cached for a while to stay within the free daily limit — use
+    Refresh to force a reload. Historical search uses Wikipedia directly, no
+    proxy needed.
   </p>
 </div>
 
@@ -342,17 +345,27 @@
     url.searchParams.set('lang', 'en');
     url.searchParams.set('max', '10');
     url.searchParams.set('apikey', apiKey);
+
+    // GNews's free tier appears to block direct browser (CORS) requests —
+    // routed through a free public CORS proxy that adds the missing
+    // permission header. This is a real third-party dependency: if the
+    // proxy is down, live news fails even though GNews itself is fine.
+    const proxied = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url.toString());
+
     let res;
     try{
-      res = await fetch(url.toString());
+      res = await fetch(proxied);
     }catch(networkErr){
-      throw new Error('Network/CORS error — the request never reached GNews. This can mean GNews\'s free tier is blocking direct browser calls. Detail: ' + networkErr.message);
+      throw new Error('Network error — the request never went through, even via the CORS proxy. Detail: ' + networkErr.message);
     }
     if(!res.ok){
       const body = await res.text().catch(()=>'') ;
-      throw new Error(`GNews returned ${res.status} ${res.statusText}. ${body ? 'Detail: ' + body.slice(0,200) : ''}`);
+      throw new Error(`Request failed (${res.status} ${res.statusText}). ${body ? 'Detail: ' + body.slice(0,200) : ''}`);
     }
     const data = await res.json();
+    if(data.errors){
+      throw new Error('GNews error: ' + (Array.isArray(data.errors) ? data.errors.join(', ') : JSON.stringify(data.errors)));
+    }
     return data.articles || [];
   }
 
