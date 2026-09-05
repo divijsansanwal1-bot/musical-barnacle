@@ -350,7 +350,7 @@
     // routed through a free public CORS proxy that adds the missing
     // permission header. This is a real third-party dependency: if the
     // proxy is down, live news fails even though GNews itself is fine.
-    const proxied = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url.toString());
+    const proxied = 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(url.toString());
 
     let res;
     try{
